@@ -21,7 +21,7 @@ Paced like a person, checked for AI-sounding text, and able to borrow the reply 
 |---|---|
 | 💬 **Reply** | Finds a post on your feed, opens the reply box, types, verifies, sends. About 6 s per reply. |
 | 📝 **Post** | Publishes a new post, with line breaks and emoji. |
-| 🗓️ **Schedule** | Posts from a queue file at set times. |
+| 🗓️ **Schedule** | Posts from a queue file at set times. x.com and multi-platform scheduling: [coming soon](#coming-soon). |
 | ⏱️ **Pace** | Four presets from 25 to 60 replies an hour, with breaks, daily caps and active hours. |
 | 🧠 **Learn a style** | Scrapes up to 1,000 replies from any account (about $0.40) and turns them into a style guide. |
 | 🧹 **Humanize** | Blocks replies with AI tells, replies that repeat the post, and replies that copy the style source. |
@@ -49,6 +49,7 @@ flowchart LR
 - [Benchmarks](#benchmarks)
 - [Safety](#safety)
 - [Troubleshooting](#troubleshooting)
+- [Coming soon](#coming-soon)
 
 ## Requirements
 
@@ -196,6 +197,8 @@ which is built on Wikipedia's *Signs of AI writing*. A reply is blocked if it ha
 - the not-X-but-Y formula, or ALL CAPS emphasis
 - a number or 4+ words repeated from the post
 - an emoji within 7 replies of the last one, counted across runs
+- apostrophes or quote marks, or contractions typed without them (*whats, dont, im*). Keyboards autocorrect
+  those back to *what's*, so rephrase instead: *what would you cut first*
 
 `--force` overrides a block. If you write replies with Claude Code, install the humanizer skill too, and the
 included `.claude/skills/x-replies` skill walks Claude through the scan, write, lint and post loop.
@@ -217,8 +220,8 @@ The runner writes `posted`, `missed` or `blocked` back into the file. It needs t
 in and unlocked, and X able to come to the front. If you're typing in another app it waits, and after 15
 minutes (`--grace`) it marks the post missed.
 
-If your posts only need to go out on time, X's own scheduler on x.com (the calendar icon in the composer) is
-more reliable, because X's servers publish them and your devices can be off. The Android app has no scheduler.
+> **Coming soon:** scheduling through X's own scheduler on x.com, so X's servers publish your posts and your
+> phone and laptop can be off. See [Coming soon](#coming-soon).
 
 ## Benchmarks
 
@@ -246,6 +249,11 @@ screen reads down to about 0.3 s.
   shortcuts, and in another app they'd land in your chats.
 - **The reply target is checked before sending.** If the box doesn't say *Replying to @handle* and the text
   doesn't match, nothing is sent.
+- **Only original posts get replies.** When the target is itself someone's reply, X's box says
+  *Replying to @a and @b*; the script sees two names, clears the box and moves on.
+- **Autocorrect can't sneak in an apostrophe.** If the keyboard changes the text, the reply is cleared, not sent.
+- **No half-written replies are left behind.** After any failure the reply box is emptied and closed, and a
+  batch never scrolls while a keyboard is open (on SwiftKey a swipe would type a word).
 - **The batch stops on sight of X warnings** such as "rate limit", "unusual activity" or "temporarily limited".
 - **It can't run in the background on the phone you're using**, because it drives the real screen. Use a
   spare phone or an Android emulator if you want your phone free.
@@ -260,7 +268,8 @@ slowly, keep a person reviewing what gets posted, and use it on your own account
 |---|---|
 | `adb devices` shows `unauthorized` | Unlock the phone and accept the USB debugging prompt. |
 | Emoji not typed | `adb shell input text` can't send emoji, so the script taps them in the keyboard's emoji panel. That works with SwiftKey, which labels each emoji; other keyboards may not. |
-| Words change after typing | Your keyboard's autocorrect. The check ignores capitals and apostrophes; anything else stops the reply. |
+| Words change after typing | Your keyboard's autocorrect. A capital first letter is accepted; any other change, including an added apostrophe, stops the reply. Rephrase the draft. |
+| `is a reply in a conversation` | The post you picked is someone's reply. Pick the original post at the top of the thread. |
 | A tap lands on the nav bar | Adjust `SAFE_TOP` / `SAFE_BOTTOM` in `x_reply.py` for your screen. |
 | `X is not the app in front` | Bring X to the front and don't use the phone during a batch. |
 | Style fetch returns fewer replies | The account may not have that many in reach of search. Run `fetch` again later; it resumes. |
@@ -275,6 +284,15 @@ styles/<handle>/         scraped replies, profile.json, style.md   (git-ignored)
 batches/                 reply lists you've run                    (git-ignored)
 reply_runs.jsonl         per-step timings and the daily cap log    (git-ignored)
 ```
+
+## Coming soon
+
+- **Scheduling on x.com.** Queue posts in a file and have them entered into X's own scheduler, so they go out
+  from X's servers even when your phone and laptop are off.
+- **Multi-platform scheduling.** One calendar for X, Instagram, LinkedIn, Facebook and more, through a
+  self-hosted scheduler.
+
+Want one of these sooner, or something else? Open an issue.
 
 ## License
 

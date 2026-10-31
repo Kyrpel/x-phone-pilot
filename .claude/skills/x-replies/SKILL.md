@@ -19,6 +19,13 @@ The phone is connected over USB with debugging on, and the X app is open on the 
    - no dashes, no staged openers ("Honestly?", "Here's the thing"), no stock AI words, and no generic praise ("great post").
    - don't claim experiences or facts the user doesn't have.
    - at most one reply in seven gets an emoji. The batch command enforces this using the posting log.
+   - no apostrophes or quote marks, and no contractions typed without them ("whats", "dont"):
+     the keyboard autocorrects those back. Rephrase instead ("what would you cut first").
+   - sound like a person scrolling, not an interviewer: mostly quick takes, jokes, mild disagreement
+     or a specific detail from the post. At most one reply in three is a question, and never the
+     "what's the first X you'd Y?" kind.
+   - reply only to original posts. Skip anything that is itself a reply, and never reply twice in one
+     conversation. The script refuses when the reply box says "Replying to @a and @b".
 4. Save the replies to `batches/<date>_<n>.json` as `[{"handle": "...", "match": "a few words of the post", "text": "..."}]`,
    in feed order.
 5. Show the user the replies, then run

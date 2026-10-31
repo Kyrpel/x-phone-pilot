@@ -60,6 +60,13 @@ CHATBOT_RESIDUE = ("great question", "i hope this helps", "certainly", "of cours
                    "couldn't agree more", "this is huge", "absolutely")
 
 
+APOSTROPHES = re.compile(r"['’‘\"“”]")
+# Contractions typed without the apostrophe: the keyboard's autocorrect puts it back.
+BARE_CONTRACTIONS = ("whats", "lets", "dont", "cant", "wont", "im", "youre", "thats", "didnt",
+                     "isnt", "doesnt", "youd", "theyre", "ive", "youll", "theyll", "shouldnt",
+                     "wouldnt", "couldnt", "aint", "hes", "shes", "wasnt", "arent", "havent")
+
+
 def _numbers(s):
     out = set()
     for num, k in re.findall(r"(\d[\d,.]*)\s*([kKmM]?)\b", s):
@@ -79,6 +86,10 @@ def humanizer_lint(text, post_text=""):
     hard, soft = [], []
     if re.search(r"[—–]| -- ", text):
         hard.append("dash (§8)")
+    if APOSTROPHES.search(text):
+        hard.append("apostrophe or quote mark: rephrase without contractions")
+    hard += [f"'{w}' gets autocorrected to a contraction: rephrase" for w in BARE_CONTRACTIONS
+             if re.search(rf"\b{w}\b", t)]
     hard += [f"AI word '{w}' (§12)" for w in AI_WORDS if re.search(rf"\b{re.escape(w)}\b", t)]
     hard += [f"staged opener '{o}' (§4)" for o in STAGED_OPENERS if t.startswith(o)]
     hard += [f"chatbot / reply-guy residue '{r}' (§22)" for r in CHATBOT_RESIDUE if r in t]
@@ -390,8 +401,13 @@ def reply(handle, text, post=True, composer_open=False, btn=None):
         mark("verify")
         if not hdr or f"@{handle.lower()}" not in hdr["text"].lower():
             raise RuntimeError(f"composer is not replying to @{handle}: {hdr and hdr['text']!r}")
+        # "Replying to @a and @b" means the target is itself someone's reply: skip those.
+        if len(set(re.findall(r"@\w+", hdr["text"].lower()))) > 1:
+            raise RuntimeError(f"@{handle}'s post is a reply in a conversation: {hdr['text']!r}")
         if normalize(typed) != normalize(text):
             raise RuntimeError(f"text mismatch: typed {typed!r}, wanted {text!r}")
+        if APOSTROPHES.search(typed or "") and not APOSTROPHES.search(text):
+            raise RuntimeError(f"autocorrect added an apostrophe or quote: {typed!r}")
 
         if post:
             send = first(nodes, lambda n: n["pkg"] == X_PKG and n["desc"] == "Reply"
@@ -537,7 +553,9 @@ def scan_feed(screens=1, rewind=True):
         if i < screens - 1:
             swipe_page()
     if rewind:
-        for _ in range(screens):  # one extra page up so the batch starts above them
+        # Exactly as many pages as we scrolled: one more would pull-to-refresh at the
+        # top of the feed and replace the posts we just read.
+        for _ in range(screens - 1):
             swipe_page(down=False)
     return out
 
@@ -548,6 +566,16 @@ def posted_today():
     today = date.today().isoformat()
     return sum(1 for line in LOG.read_text(encoding="utf-8").splitlines()
                if '"posted": true' in line and f'"started": "{today}' in line)
+
+
+def last_posted_time():
+    """Epoch seconds of the most recent posted reply or post in the log, or None."""
+    if not LOG.exists():
+        return None
+    times = [json.loads(line).get("started") for line in LOG.read_text(encoding="utf-8").splitlines()
+             if '"posted": true' in line]
+    times = [t for t in times if t]
+    return datetime.fromisoformat(max(times)).timestamp() if times else None
 
 
 def in_active_hours(hours):
@@ -587,6 +615,10 @@ def batch(items, post=True, preset=None, hours=None, max_screens=14, force=False
         return []
     pending, results, screens, done = list(items), [], 0, 0
     next_start = time.time()
+    if pace:  # keep the gap across runs too: time it from the last reply in the log
+        last = last_posted_time()
+        if last:
+            next_start = max(next_start, last + random.uniform(*pace["gap"]))
     while pending and screens <= max_screens:
         if not x_in_front():
             log({"error": "X left the foreground; batch stopped"})
