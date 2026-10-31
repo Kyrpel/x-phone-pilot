@@ -21,7 +21,7 @@ Paced like a person, checked for AI-sounding text, and able to borrow the reply 
 |---|---|
 | 💬 **Reply** | Finds a post on your feed, opens the reply box, types, verifies, sends. About 6 s per reply. |
 | 📝 **Post** | Publishes a new post, with line breaks and emoji. |
-| 🗓️ **Schedule** | Posts from a queue file at set times. x.com and multi-platform scheduling: [coming soon](#coming-soon). |
+| 🗓️ **Schedule** | Posts from a queue file at set times. x.com scheduling and an X posting calendar: [coming soon](#coming-soon). |
 | ⏱️ **Pace** | Four presets from 25 to 60 replies an hour, with breaks, daily caps and active hours. |
 | 🧠 **Learn a style** | Scrapes up to 1,000 replies from any account (about $0.40) and turns them into a style guide. |
 | 🧹 **Humanize** | Blocks replies with AI tells, replies that repeat the post, and replies that copy the style source. |
@@ -289,8 +289,7 @@ reply_runs.jsonl         per-step timings and the daily cap log    (git-ignored)
 
 - **Scheduling on x.com.** Queue posts in a file and have them entered into X's own scheduler, so they go out
   from X's servers even when your phone and laptop are off.
-- **Multi-platform scheduling.** One calendar for X, Instagram, LinkedIn, Facebook and more, through a
-  self-hosted scheduler.
+- **A posting calendar for X.** Plan, review and queue your X posts in one self-hosted calendar.
 
 Want one of these sooner, or something else? Open an issue.
 
