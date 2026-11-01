@@ -42,6 +42,8 @@ EMOJI_EVERY = 7  # at most one reply in seven carries an emoji
 WARNING_SIGNS = ("automated", "unusual activity", "temporarily limited", "rate limit",
                  "over the daily limit", "try again later", "something went wrong",
                  "reply was hidden", "locked")
+# Whole words only, so a post saying "blocked" doesn't read as "locked".
+WARNING_RE = re.compile(r"\b(?:" + "|".join(map(re.escape, WARNING_SIGNS)) + r")\b")
 
 
 # ---------------------------------------------------------------- humanizer lint
@@ -633,7 +635,7 @@ def batch(items, post=True, preset=None, hours=None, max_screens=14, force=False
             log({"stopped": f"outside active hours {hours}"})
             break
         nodes = dump()
-        warning = first(nodes, lambda n: any(w in n["text"].lower() for w in WARNING_SIGNS)
+        warning = first(nodes, lambda n: WARNING_RE.search(n["text"].lower())
                         and len(n["text"]) < 200)
         if warning:
             log({"stopped": "X shows a warning", "text": warning["text"]})
